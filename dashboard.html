@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard V2.4.7</title>
+    
+    <!-- تشفير CSS -->
+    <style>
+        :root {
+            --c-1: #0a192f;
+            --c-2: #112240;
+            --c-3: #233554;
+            --a-1: #64ffda;
+            --a-2: #8892b0;
+        }
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: var(--c-1);
+            color: var(--a-2);
+            font-family: 'SF Mono', monospace;
+            counter-reset: section;
+        }
+        
+        .terminal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(45deg, 
+                    transparent 49%, 
+                    rgba(100, 255, 218, 0.02) 49%, 
+                    rgba(100, 255, 218, 0.02) 51%, 
+                    transparent 51%
+                ),
+                radial-gradient(circle at 50% 50%, 
+                    var(--c-2) 0%, 
+                    transparent 70%
+                );
+        }
+        
+        .grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(100, 255, 218, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100, 255, 218, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .panel {
+            position: absolute;
+            background: rgba(17, 34, 64, 0.8);
+            border: 1px solid rgba(100, 255, 218, 0.1);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                var(--a-1), 
+                transparent
+            );
+        }
+        
+        .data-stream {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(10, 25, 47, 0.9);
+            border-top: 1px solid var(--c-3);
+            overflow: hidden;
+        }
+        
+        .bit {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--a-1);
+            opacity: 0;
+            animation: bit-fall linear infinite;
+        }
+        
+        @keyframes bit-fall {
+            0% {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(60px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- نظام لوحة التحكم -->
+    <div class="terminal">
+        <div class="grid"></div>
+        
+        <!-- لوحات المعلومات -->
+        <div class="panel" style="top: 20px; left: 20px; width: 300px; height: 200px;">
+            <div class="panel-header">System Status</div>
+            <div class="panel-content">
+                <div id="sys-info">Initializing...</div>
+            </div>
+        </div>
+        
+        <div class="panel" style="top: 20px; left: 340px; width: 400px; height: 200px;">
+            <div class="panel-header">Activity Monitor</div>
+            <canvas id="activity-canvas" width="380" height="160"></canvas>
+        </div>
+        
+        <div class="panel" style="top: 240px; left: 20px; width: 720px; height: 300px;">
+            <div class="panel-header">Data Stream</div>
+            <div id="log-container"></div>
+        </div>
+        
+        <!-- لوحة التحكم الجانبية -->
+        <div class="panel" style="top: 20px; right: 20px; width: 200px; bottom: 80px;">
+            <div class="panel-header">Controls</div>
+            <div class="control-panel">
+                <button class="ctrl-btn" data-action="encrypt">Encrypt</button>
+                <button class="ctrl-btn" data-action="scan">Scan</button>
+                <button class="ctrl-btn" data-action="clear">Clear Logs</button>
+                <button class="ctrl-btn" data-action="export">Export Data</button>
+            </div>
+        </div>
+        
+        <!-- تيار البيانات -->
+        <div class="data-stream" id="data-stream"></div>
+        
+        <!-- إدخال الأوامر -->
+        <div class="cmd-input">
+            <span class="prompt">$></span>
+            <input type="text" id="command-input" autocomplete="off" spellcheck="false">
+        </div>
+    </div>
+    
+    <!-- نظام SVG المخفي -->
+    <svg style="display: none;">
+        <defs>
+            <filter id="glow">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+            <pattern id="binary" patternUnits="userSpaceOnUse" width="10" height="10">
+                <text x="0" y="8" font-size="6" fill="rgba(100,255,218,0.3)">
+                    <tspan>1</tspan>
+                    <tspan x="5">0</tspan>
+                </text>
+            </pattern>
+        </defs>
+    </svg>
+
+    <!-- نظام JavaScript المعقد -->
+    <script>
+        (function() {
+            'use strict';
+            
+            // نظام التشفير
+            class CryptoSystem {
+                #key = new Uint8Array([0x54, 0x68, 0x65, 0x20, 0x4b, 0x65, 0x79]);
+                
+                encrypt(text) {
+                    let result = '';
+                    for (let i = 0; i < text.length; i++) {
+                        const charCode = text.charCodeAt(i);
+                        const keyByte = this.#key[i % this.#key.length];
+                        const encrypted = charCode ^ keyByte;
+                        result += String.fromCharCode(encrypted);
+                    }
+                    return btoa(result);
+                }
+                
+                decrypt(encrypted) {
+                    const decoded = atob(encrypted);
+                    let result = '';
+                    for (let i = 0; i < decoded.length; i++) {
+                        const charCode = decoded.charCodeAt(i);
+                        const keyByte = this.#key[i % this.#key.length];
+                        result += String.fromCharCode(charCode ^ keyByte);
+                    }
+                    return result;
+                }
+                
+                generateHash(data) {
+                    let hash = 5381;
+                    for (let i = 0; i < data.length; i++) {
+                        hash = ((hash << 5) + hash) + data.charCodeAt(i);
+                    }
+                    return hash.toString(16);
+                }
+            }
+            
+            // نظام التسجيل
+            class Logger {
+                #logs = [];
+                #maxLogs = 100;
+                
+                log(message, level = 'INFO') {
+                    const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+                    const logEntry = {
+                        timestamp,
+                        level,
+                        message,
+                        id: this.#logs.length + 1
+                    };
+                    
+                    this.#logs.push(logEntry);
+                    
+                    if (this.#logs.length > this.#maxLogs) {
+                        this.#logs.shift();
+                    }
+                    
+                    this.#displayLog(logEntry);
+                    this.#saveToStorage();
+                }
+                
+                #displayLog(entry) {
+                    const container = document.getElementById('log-container');
+                    const logElement = document.createElement('div');
+                    logElement.className = `log-entry log-${entry.level.toLowerCase()}`;
+                    logElement.innerHTML = `
+                        <span class="log-time">[${entry.timestamp}]</span>
+                        <span class="log-level">${entry.level}</span>
+                        <span class="log-msg">${entry.message}</span>
+                    `;
+                    
+                    container.appendChild(logElement);
+                    container.scrollTop = container.scrollHeight;
+                }
+                
+                #saveToStorage() {
+                    const crypto = new CryptoSystem();
+                    const encrypted = crypto.encrypt(JSON.stringify(this.#logs));
+                    localStorage.setItem('sys_logs', encrypted);
+                }
+                
+                clear() {
+                    this.#logs = [];
+                    document.getElementById('log-container').innerHTML = '';
+                    localStorage.removeItem('sys_logs');
+                }
+            }
+            
+            // نظام المراقبة
+            class Monitor {
+                constructor() {
+                    this.cpuUsage = 0;
+                    this.memory = 0;
+                    this.connections = 0;
+                    this.uptime = Date.now();
+                }
+                
+                update() {
+                    // محاكاة بيانات النظام
+                    this.cpuUsage = 20 + Math.random() * 40;
+                    this.memory = 60 + Math.random() * 30;
+                    this.connections = Math.floor(Math.random() * 100);
+                    
+                    // تحديث العرض
+                    document.getElementById('sys-info').innerHTML = `
+                        <div>CPU: ${this.cpuUsage.toFixed(1)}%</div>
+                        <div>Memory: ${this.memory.toFixed(1)}%</div>
+                        <div>Connections: ${this.connections}</div>
+                        <div>Uptime: ${Math.floor((Date.now() - this.uptime) / 1000)}s</div>
+                    `;
+                }
+            }
+            
+            // نظام الرسوميات
+            class ChartSystem {
+                constructor(canvasId) {
+                    this.canvas = document.getElementById(canvasId);
+                    this.ctx = this.canvas.getContext('2d');
+                    this.data = new Array(50).fill(0);
+                }
+                
+                update(value) {
+                    this.data.shift();
+                    this.data.push(value);
+                    this.draw();
+                }
+                
+                draw() {
+                    const ctx = this.ctx;
+                    const width = this.canvas.width;
+                    const height = this.canvas.height;
+                    
+                    // مسح الخلفية
+                    ctx.fillStyle = 'rgba(17, 34, 64, 0.5)';
+                    ctx.fillRect(0, 0, width, height);
+                    
+                    // رسم الشبكة
+                    ctx.strokeStyle = 'rgba(100, 255, 218, 0.1)';
+                    ctx.lineWidth = 0.5;
+                    
+                    // خطوط أفقية
+                    for (let i = 0; i <= 5; i++) {
+                        const y = (height / 5) * i;
+                        ctx.beginPath();
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(width, y);
+                        ctx.stroke();
+                    }
+                    
+                    // رسم البيانات
+                    ctx.strokeStyle = '#64ffda';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    
+                    const step = width / (this.data.length - 1);
+                    this.data.forEach((value, index) => {
+                        const x = index * step;
+                        const y = height - (value / 100) * height;
+                        
+                        if (index === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    });
+                    
+                    ctx.stroke();
+                    
+                    // ملء تحت الخط
+                    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+                    gradient.addColorStop(0, 'rgba(100, 255, 218, 0.2)');
+                    gradient.addColorStop(1, 'rgba(100, 255, 218, 0)');
+                    
+                    ctx.lineTo(width, height);
+                    ctx.lineTo(0, height);
+                    ctx.closePath();
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                }
+            }
+            
+            // نظام تدفق البيانات
+            class DataStream {
+                constructor(containerId) {
+                    this.container = document.getElementById(containerId);
+                    this.interval = null;
+                }
+                
+                start() {
+                    this.interval = setInterval(() => {
+                        this.createBit();
+                    }, 50);
+                }
+                
+                createBit() {
+                    const bit = document.createElement('div');
+                    bit.className = 'bit';
+                    
+                    // وضع عشوائي
+                    const left = Math.random() * 100;
+                    const duration = 1 + Math.random() * 2;
+                    const delay = Math.random() * 2;
+                    
+                    bit.style.left = `${left}%`;
+                    bit.style.animationDuration = `${duration}s`;
+                    bit.style.animationDelay = `${delay}s`;
+                    
+                    this.container.appendChild(bit);
+                    
+                    // إزالة بعد الانتهاء
+                    setTimeout(() => {
+                        if (bit.parentNode) {
+                            bit.parentNode.removeChild(bit);
+                        }
+                    }, (duration + delay) * 1000);
+                }
+                
+                stop() {
+                    if (this.interval) {
+                        clearInterval(this.interval);
+                    }
+                }
+            }
+            
+            // نظام الأوامر
+            class CommandSystem {
+                constructor() {
+                    this.commands = new Map();
+                    this.history = [];
+                    this.historyIndex = -1;
+                    
+                    this.registerCommands();
+                }
+                
+                registerCommands() {
+                    this.commands.set('help', () => this.showHelp());
+                    this.commands.set('clear', () => logger.clear());
+                    this.commands.set('status', () => this.showStatus());
+                    this.commands.set('encrypt', (args) => this.encryptData(args));
+                    this.commands.set('scan', () => this.scanSystem());
+                }
+                
+                execute(cmd) {
+                    const [command, ...args] = cmd.trim().split(' ');
+                    
+                    this.history.push(cmd);
+                    this.historyIndex = this.history.length;
+                    
+                    if (this.commands.has(command)) {
+                        try {
+                            this.commands.get(command)(args);
+                            logger.log(`Executed: ${cmd}`, 'SUCCESS');
+                        } catch (error) {
+                            logger.log(`Error: ${error.message}`, 'ERROR');
+                        }
+                    } else {
+                        logger.log(`Unknown command: ${command}`, 'WARNING');
+                    }
+                }
+                
+                showHelp() {
+                    const helpText = `
+Available commands:
+  help - Show this help
+  clear - Clear logs
+  status - Show system status
+  encrypt [text] - Encrypt text
+  scan - Run system scan
+                    `;
+                    logger.log(helpText, 'INFO');
+                }
+                
+                showStatus() {
+                    monitor.update();
+                }
+                
+                encryptData(args) {
+                    if (args.length === 0) {
+                        logger.log('Please provide text to encrypt', 'WARNING');
+                        return;
+                    }
+                    
+                    const crypto = new CryptoSystem();
+                    const encrypted = crypto.encrypt(args.join(' '));
+                    logger.log(`Encrypted: ${encrypted}`, 'SUCCESS');
+                }
+                
+                scanSystem() {
+                    logger.log('Starting system scan...', 'INFO');
+                    
+                    // محاكاة المسح
+                    setTimeout(() => {
+                        const threats = Math.floor(Math.random() * 3);
+                        logger.log(`Scan complete. Threats found: ${threats}`, 
+                            threats > 0 ? 'WARNING' : 'SUCCESS');
+                    }, 2000);
+                }
+            }
+            
+            // تهيئة النظام
+            const logger = new Logger();
+            const monitor = new Monitor();
+            const chart = new ChartSystem('activity-canvas');
+            const dataStream = new DataStream('data-stream');
+            const commandSystem = new CommandSystem();
+            const crypto = new CryptoSystem();
+            
+            // بدء الأنظمة
+            function initialize() {
+                logger.log('Initializing Dashboard System...', 'INFO');
+                
+                // بدء المراقبة
+                setInterval(() => {
+                    monitor.update();
+                    chart.update(monitor.cpuUsage);
+                }, 1000);
+                
+                // بدء تدفق البيانات
+                dataStream.start();
+                
+                // تهيئة إدخال الأوامر
+                const commandInput = document.getElementById('command-input');
+                commandInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        const cmd = commandInput.value.trim();
+                        if (cmd) {
+                            commandSystem.execute(cmd);
+                            commandInput.value = '';
+                        }
+                    }
+                });
+                
+                // تهيئة الأزرار
+                document.querySelectorAll('.ctrl-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const action = btn.dataset.action;
+                        commandSystem.execute(action);
+                    });
+                });
+                
+                // تحميل السجلات القديمة
+                const savedLogs = localStorage.getItem('sys_logs');
+                if (savedLogs) {
+                    try {
+                        const decrypted = crypto.decrypt(savedLogs);
+                        const logs = JSON.parse(decrypted);
+                        logs.forEach(log => {
+                            logger.log(log.message, log.level);
+                        });
+                    } catch (e) {
+                        logger.log('Failed to load previous logs', 'ERROR');
+                    }
+                }
+                
+                logger.log('Dashboard System Ready', 'SUCCESS');
+            }
+            
+            // بدء النظام عند تحميل الصفحة
+            window.addEventListener('load', () => {
+                setTimeout(initialize, 500);
+            });
+            
+            // جعل النظام متاحًا عالميًا
+            window.DashboardSystem = {
+                logger,
+                monitor,
+                chart,
+                commandSystem,
+                crypto
+            };
+        })();
+    </script>
+</body>
+</html>

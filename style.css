@@ -1,0 +1,96 @@
+/* نظام CSS المعقد */
+:root {
+    --sys-color-1: #0a0a0a;
+    --sys-color-2: #1a1a1a;
+    --sys-color-3: #2a2a2a;
+    --c1: calc(var(--sys-color-1) * 1.5);
+    --c2: calc(var(--sys-color-2) + 10%);
+    --c3: rgb(calc(255 * 0.1), calc(255 * 0.2), calc(255 * 0.3));
+}
+
+body::before {
+    content: "";
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background: 
+        linear-gradient(45deg, 
+            transparent 49.5%, 
+            var(--sys-color-2) 49.5%, 
+            var(--sys-color-2) 50.5%, 
+            transparent 50.5%
+        ),
+        radial-gradient(circle at 50% 50%, 
+            var(--sys-color-1) 0%, 
+            transparent 70%
+        );
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 9999;
+    animation: sys-grid 20s linear infinite;
+}
+
+@keyframes sys-grid {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(1px, 1px) rotate(0.5deg); }
+    50% { transform: translate(0, 0) rotate(0deg); }
+    75% { transform: translate(-1px, -1px) rotate(-0.5deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* نظام الطبقات */
+.layer-1, .layer-2, .layer-3 {
+    position: relative;
+    isolation: isolate;
+}
+
+.layer-1::after {
+    content: counter(system, decimal-leading-zero);
+    counter-increment: system;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 8px;
+    color: rgba(255,255,255,0.1);
+    font-family: monospace;
+}
+
+/* تأثيرات متقدمة */
+#q {
+    filter: 
+        blur(0.3px) 
+        contrast(1.1) 
+        hue-rotate(calc(var(--time, 0) * 0.1deg));
+    mix-blend-mode: screen;
+}
+
+/* تحسينات الأداء */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* نظام الأمان */
+input[type="password"] {
+    font-family: 'system-ui', monospace;
+    letter-spacing: 0.3em;
+    background-image: 
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 1px,
+            rgba(0,0,0,0.05) 1px,
+            rgba(0,0,0,0.05) 2px
+        );
+}
+
+/* تحسينات الطباعة */
+@media print {
+    body::before,
+    #q,
+    .layer-1::after {
+        display: none !important;
+    }
+}

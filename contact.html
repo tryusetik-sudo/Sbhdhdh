@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Contact</title>
+    <style>
+        :root{
+            --a:#0a0a0a;
+            --b:#1a1a1a;
+            --c:#64ffda;
+            --d:#8892b0
+        }
+        body{
+            margin:0;
+            background:var(--a);
+            color:var(--d);
+            font-family:monospace;
+            min-height:100vh;
+            display:flex;
+            flex-direction:column
+        }
+        .c{
+            flex:1;
+            padding:2rem;
+            max-width:600px;
+            margin:auto
+        }
+        h1{
+            font-size:1.5rem;
+            margin-bottom:2rem;
+            color:var(--c)
+        }
+        .info{
+            background:var(--b);
+            border:1px solid rgba(100,255,218,.1);
+            padding:1.5rem;
+            border-radius:8px;
+            margin-bottom:2rem
+        }
+        .info-item{
+            margin-bottom:1rem;
+            padding-bottom:.5rem;
+            border-bottom:1px solid rgba(100,255,218,.05)
+        }
+        .info-item:last-child{
+            border-bottom:none;
+            margin-bottom:0
+        }
+        .label{
+            color:var(--c);
+            font-size:.9rem;
+            margin-bottom:.25rem
+        }
+        .value{
+            font-size:1.1rem;
+            word-break:break-all
+        }
+        .links{
+            display:flex;
+            gap:1rem;
+            margin-top:2rem;
+            flex-wrap:wrap
+        }
+        .link{
+            padding:.75rem 1.5rem;
+            background:var(--b);
+            border:1px solid var(--c);
+            color:var(--c);
+            text-decoration:none;
+            border-radius:6px;
+            transition:all .3s;
+            font-size:.9rem
+        }
+        .link:hover{
+            background:var(--c);
+            color:var(--a)
+        }
+        .decoder{
+            margin-top:3rem;
+            padding:1.5rem;
+            background:var(--b);
+            border-radius:8px;
+            border:1px solid rgba(100,255,218,.1)
+        }
+        .code-input{
+            width:100%;
+            padding:.75rem;
+            background:rgba(10,10,10,.8);
+            border:1px solid rgba(100,255,218,.2);
+            color:var(--c);
+            font-family:monospace;
+            border-radius:4px;
+            margin-bottom:1rem
+        }
+        .decode-btn{
+            background:var(--c);
+            color:var(--a);
+            border:none;
+            padding:.5rem 1rem;
+            border-radius:4px;
+            cursor:pointer;
+            font-family:monospace;
+            font-weight:bold
+        }
+        .result{
+            margin-top:1rem;
+            padding:1rem;
+            background:rgba(10,10,10,.8);
+            border-radius:4px;
+            display:none
+        }
+        footer{
+            text-align:center;
+            padding:1rem;
+            color:var(--d);
+            font-size:.8rem;
+            border-top:1px solid rgba(100,255,218,.1)
+        }
+        .encrypted{
+            font-family:monospace;
+            color:rgba(100,255,218,.7);
+            background:rgba(0,0,0,.3);
+            padding:.25rem .5rem;
+            border-radius:3px;
+            font-size:.85rem
+        }
+    </style>
+</head>
+<body>
+    <div class="c">
+        <h1>Contact System</h1>
+        
+        <div class="info">
+            <div class="info-item">
+                <div class="label">Primary Contact</div>
+                <div class="value encrypted" id="contact-1">ODExMTIzODU4NjQ=</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="label">Secure Channel</div>
+                <div class="value">
+                    <span class="encrypted">dGVsZWdyYW0=</span>: @secure_channel
+                </div>
+            </div>
+            
+            <div class="info-item">
+                <div class="label">Backup Contact</div>
+                <div class="value encrypted" id="contact-2">MDEwMTIzNDU2Nzg=</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="label">Response Time</div>
+                <div class="value">24-48h (encrypted)</div>
+            </div>
+        </div>
+
+        <div class="links">
+            <a href="https://wa.me/01112385864" class="link" target="_blank">WhatsApp</a>
+            <a href="https://t.me/secure_channel" class="link" target="_blank">Telegram</a>
+            <a href="mailto:secure@domain.com" class="link">Email</a>
+        </div>
+
+        <div class="decoder">
+            <h3 style="margin-top:0;color:var(--c)">Decoder</h3>
+            <input type="text" class="code-input" id="codeInput" placeholder="Enter encrypted code">
+            <button class="decode-btn" onclick="decodeMessage()">Decode</button>
+            <div class="result" id="result"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="encrypted">v1.4.7</div>
+        <div style="margin-top:.5rem">Access Level: [CLASSIFIED]</div>
+    </footer>
+
+    <script>
+        (function(){
+            'use strict';
+            
+            // نظام تشفير
+            class Encryptor{
+                constructor(){
+                    this.key='SECRET2024';
+                }
+                
+                encode(text){
+                    return btoa(text.split('').map((c,i)=>
+                        String.fromCharCode(c.charCodeAt(0)^
+                        this.key.charCodeAt(i%this.key.length))
+                    ).join(''));
+                }
+                
+                decode(encoded){
+                    try{
+                        const decoded=atob(encoded);
+                        return decoded.split('').map((c,i)=>
+                            String.fromCharCode(c.charCodeAt(0)^
+                            this.key.charCodeAt(i%this.key.length))
+                        ).join('');
+                    }catch(e){
+                        return '[DECODE ERROR]';
+                    }
+                }
+            }
+            
+            const enc=new Encryptor();
+            
+            // فك التشفير التلقائي
+            function autoDecode(){
+                const elements=document.querySelectorAll('.encrypted');
+                elements.forEach(el=>{
+                    if(el.id.includes('contact')){
+                        const decoded=enc.decode(el.textContent);
+                        el.textContent=decoded;
+                        el.style.color='#64ffda';
+                    }
+                });
+            }
+            
+            // فك الرسائل يدوياً
+            window.decodeMessage=function(){
+                const input=document.getElementById('codeInput').value.trim();
+                const result=document.getElementById('result');
+                
+                if(!input){
+                    result.style.display='block';
+                    result.innerHTML='<span style="color:#ff5555">Input required</span>';
+                    return;
+                }
+                
+                try{
+                    const decoded=enc.decode(input);
+                    result.style.display='block';
+                    result.innerHTML=`<div style="color:#64ffda">${decoded}</div>`;
+                }catch(e){
+                    result.style.display='block';
+                    result.innerHTML='<span style="color:#ff5555">Invalid code</span>';
+                }
+            };
+            
+            // تهيئة
+            document.addEventListener('DOMContentLoaded',()=>{
+                setTimeout(autoDecode,1500);
+                
+                // إضافة مؤثرات
+                const inputs=document.querySelectorAll('.code-input');
+                inputs.forEach(input=>{
+                    input.addEventListener('focus',function(){
+                        this.style.borderColor='#64ffda';
+                        this.style.boxShadow='0 0 10px rgba(100,255,218,0.2)';
+                    });
+                    input.addEventListener('blur',function(){
+                        this.style.borderColor='rgba(100,255,218,0.2)';
+                        this.style.boxShadow='none';
+                    });
+                });
+                
+                // تشفير عند الكتابة
+                const codeInput=document.getElementById('codeInput');
+                codeInput.addEventListener('input',function(){
+                    if(this.value.length>0){
+                        this.style.background='rgba(10,25,47,0.8)';
+                    }else{
+                        this.style.background='rgba(10,10,10,0.8)';
+                    }
+                });
+                
+                // إدخال عبر Enter
+                codeInput.addEventListener('keypress',function(e){
+                    if(e.key==='Enter'){
+                        decodeMessage();
+                    }
+                });
+                
+                // رقم WhatsApp في المتن
+                const whatsappNum='01112385864';
+                const telegramNum='01012345678';
+                
+                // حفظ في الذاكرة
+                sessionStorage.setItem('ct_1',enc.encode(whatsappNum));
+                sessionStorage.setItem('ct_2',enc.encode(telegramNum));
+                sessionStorage.setItem('ct_time',Date.now().toString());
+            });
+            
+            // نظام الحماية
+            Object.defineProperty(document,'hidden',{
+                get:()=>false,
+                configurable:false
+            });
+            
+            // مؤقت التنظيف
+            setInterval(()=>{
+                const logs=sessionStorage.getItem('ct_logs');
+                if(logs&&logs.length>1000){
+                    sessionStorage.removeItem('ct_logs');
+                }
+            },60000);
+        })();
+    </script>
+</body>
+</html>
